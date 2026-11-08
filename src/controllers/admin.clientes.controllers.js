@@ -24,6 +24,8 @@ import {
   validarFicha,
   validarProyecto,
 } from "../services/clientes.service.js";
+import { contratosDe } from "../services/contratos.service.js";
+import { almacenDisponible } from "../lib/almacen.js";
 
 const POR_PAGINA = 20;
 const idValido = (x, msg) => {
@@ -297,7 +299,16 @@ async function buscarProyecto(id, db = pool) {
 export const verProyecto = async (req, res) => {
   const p = await buscarProyecto(req.params.id);
   const { rows: [cliente] } = await pool.query("SELECT id, nombre, email FROM clientes WHERE id = $1", [p.cliente_id]);
-  res.json({ success: true, data: { ...(await detalleProyecto(pool, p.id)), cliente, equipo: await equipoActivo() } });
+  res.json({
+    success: true,
+    data: {
+      ...(await detalleProyecto(pool, p.id)),
+      cliente,
+      equipo: await equipoActivo(),
+      contratos: await contratosDe(pool, p.id),
+      almacen: almacenDisponible(),
+    },
+  });
 };
 
 // ── POST /admin/proyectos { cliente_id, ...proyecto, hitos? } ────

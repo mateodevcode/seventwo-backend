@@ -58,6 +58,16 @@ export const VAPID_SUBJECT = env.VAPID_SUBJECT || "mailto:admin@seventwo.tech";
 export const TELEGRAM_BOT_TOKEN = env.TELEGRAM_BOT_TOKEN;
 export const TELEGRAM_CHAT_ID = env.TELEGRAM_CHAT_ID;
 
+// ── Archivos en S3 (contratos, comprobantes). Lo privado va bajo
+// `<AWS_BUCKET_SUBFOLDER>/privado/`, que la política del bucket NO expone:
+// se sirve con URLs firmadas de pocos minutos (docs/CLIENTES.md §4.4).
+// El SDK lee AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY del entorno.
+export const AWS_REGION = env.AWS_DEFAULT_REGION || env.AWS_REGION;
+export const AWS_BUCKET = env.AWS_BUCKET;
+export const AWS_PREFIJO = (env.AWS_BUCKET_SUBFOLDER || "seventwo").replace(/^\/+|\/+$/g, "");
+export const s3Configurado = () =>
+  Boolean(AWS_REGION && AWS_BUCKET && env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY);
+
 export const socketConfigurado = () => Boolean(SOCKET_CORE_URL && SOCKET_CORE_API_KEY);
 export const pushConfigurado = () => Boolean(VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY);
 export const telegramConfigurado = () => Boolean(TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID);
@@ -101,6 +111,9 @@ export function validarConfig() {
   }
   if (!googleConfigurado()) {
     console.warn("⚠️  Google OAuth no configurado: /auth/google responderá 503.");
+  }
+  if (!s3Configurado() && NODE_ENV !== "test") {
+    console.warn("⚠️  S3 no configurado (AWS_*): no se podrán subir contratos (503).");
   }
   const off = [
     !socketConfigurado() && "socket-core (tiempo real)",

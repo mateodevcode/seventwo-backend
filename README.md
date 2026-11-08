@@ -62,6 +62,10 @@ Los tests vacían las tablas: se niegan a correr contra una BD cuyo nombre no te
 | GET · POST · PATCH | `/admin/servicios[/:id]` | admin+ → catálogo de servicios y precios (`?todos=1` incluye los inactivos) |
 | POST · GET · PATCH | `/admin/proyectos[/:id]` | admin+ → crear, ver y editar proyectos e hitos (avisa al cliente de estado e hitos) |
 | POST | `/admin/solicitudes/:id/convertir` | admin+ `{ cliente, proyecto }` → crea o completa la ficha, sube a cliente y crea el proyecto |
+| POST | `/admin/proyectos/:id/contratos?titulo=&nombre=&firmado_fuera=1` | admin+, cuerpo PDF crudo (`application/pdf`, ≤10 MB) → sube una versión a S3 (privado) como borrador o ya firmada |
+| POST · DELETE | `/admin/contratos/:id/enviar` · `/admin/contratos/:id` | admin+ → enviar al cliente con `{ nota? }` (reemplaza la versión vigente) · borrar un borrador |
+| GET | `/admin/contratos/:id/archivo` · `/contratos/:id/archivo` | equipo o el cliente dueño → `{ url }` firmada de 5 min (el cliente nunca ve borradores) |
+| POST | `/contratos/:id/aceptar` | Bearer `{ nombre, acepto: true }` → aceptación con fecha, IP, navegador y huella verificada en S3 |
 | POST | `/auth/refresh` | cookie → `{ usuario, accessToken }` y rota la cookie |
 | POST | `/auth/logout` | cookie → revoca la sesión actual |
 | POST | `/auth/logout-todo` | Bearer → revoca todas las sesiones |

@@ -14,6 +14,7 @@ import {
   registrarActividad,
   validarFicha,
 } from "../services/clientes.service.js";
+import { contratosDe } from "../services/contratos.service.js";
 
 // ── GET /clientes/yo ─────────────────────────────────────────────
 // data: null si la cuenta aún no tiene ficha de cliente (rol usuario).
@@ -51,7 +52,7 @@ export const miResumen = async (req, res) => {
     [req.actor.id],
   );
   if (!cliente) {
-    return res.json({ success: true, data: { cliente: null, proyectos: [], conteos: { proyectos_activos: 0, solicitudes_abiertas: solicitudesAbiertas }, actividad: [] } });
+    return res.json({ success: true, data: { cliente: null, proyectos: [], contratos_pendientes: [], conteos: { proyectos_activos: 0, solicitudes_abiertas: solicitudesAbiertas }, actividad: [] } });
   }
 
   const { rows: proyectos } = await pool.query(
@@ -72,12 +73,20 @@ export const miResumen = async (req, res) => {
     "SELECT count(*)::int AS n FROM proyectos WHERE cliente_id = $1",
     [cliente.id],
   );
+  // Contratos esperando su aceptación (aviso destacado en el Resumen).
+  const { rows: contratosPendientes } = await pool.query(
+    `SELECT c.id, c.titulo, c.version, p.codigo AS proyecto_codigo
+       FROM contratos c JOIN proyectos p ON p.id = c.proyecto_id
+      WHERE p.cliente_id = $1 AND c.estado = 'enviado' ORDER BY c.enviado_en`,
+    [cliente.id],
+  );
 
   res.json({
     success: true,
     data: {
       cliente: { nombre: cliente.nombre, estado: cliente.estado, desde: cliente.created_at },
       proyectos,
+      contratos_pendientes: contratosPendientes,
       conteos: { proyectos_activos: proyectos.length, proyectos: total, solicitudes_abiertas: solicitudesAbiertas },
       actividad: await actividadDe(cliente.id, { soloCliente: true, limite: 8 }),
     },
@@ -109,5 +118,6 @@ export const verMiProyecto = async (req, res) => {
     ? await pool.query("SELECT id FROM proyectos WHERE codigo = $1 AND cliente_id = $2", [codigo, cliente.id])
     : { rows: [] };
   if (!p) throw notFound("Proyecto no encontrado.");
-  res.json({ success: true, data: await detalleProyecto(pool, p.id, { paraCliente: true }) });
+  const detalle = await detalleProyecto(pool, p.id, { paraCliente: true });
+  res.json({ success: true, data: { ...detalle, contratos: await contratosDe(pool, p.id, { paraCliente: true }) } });
 };
