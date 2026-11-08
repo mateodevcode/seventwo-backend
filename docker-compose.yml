@@ -1,0 +1,26 @@
+# Producción en el VPS. La API se une a la red donde vive Postgres
+# (por defecto `central_network`, igual que inmobitwo) y solo escucha en
+# 127.0.0.1: nginx hace de proxy TLS para api.seventwo.tech.
+services:
+  api:
+    build: .
+    container_name: seventwo-backend
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "127.0.0.1:4000:4000"
+    restart: unless-stopped
+    networks:
+      - db_network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  db_network:
+    external: true
+    name: ${DB_NETWORK:-central_network}

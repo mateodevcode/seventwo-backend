@@ -1,0 +1,22 @@
+# Postgres local para desarrollo:  npm run db:up
+# Puerto 5442 en el host para no chocar con otros Postgres locales (5432/5433).
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: seventwo-postgres-dev
+    environment:
+      POSTGRES_USER: seventwo
+      POSTGRES_PASSWORD: seventwo_dev
+      POSTGRES_DB: seventwo
+    ports:
+      - "127.0.0.1:5442:5432"
+    volumes:
+      - seventwo_pg_dev:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U seventwo -d seventwo"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  seventwo_pg_dev:
