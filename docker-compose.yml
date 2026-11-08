@@ -1,4 +1,4 @@
-# backend-seventwo en VPS: /srv/infra/seventwo/backend-seventwo
+# seventwo-backend en VPS: /srv/infra/seventwo/seventwo-backend
 # La API se une a la red donde vive postgres_central (central_network, igual
 # que inmobitwo) y solo escucha en 127.0.0.1: nginx hace de proxy TLS para
 # api.seventwo.tech (nginx/seventwo-api.conf).

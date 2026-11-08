@@ -1,4 +1,4 @@
-# .github/workflows/deploy.yml — Backend → VPS /srv/infra/seventwo/backend-seventwo
+# .github/workflows/deploy.yml — Backend → VPS /srv/infra/seventwo/seventwo-backend
 # Mismo patrón que backend-inmobitwo. Secrets del repo: VPS_HOST, VPS_USER, VPS_SSH_KEY.
 # Lo único manual en el VPS es el archivo .env (ver docs/DEPLOY.md del frontend).
 name: Deploy Backend Seventwo
@@ -34,7 +34,7 @@ jobs:
           script: |
             set -e
 
-            APP_DIR=/srv/infra/seventwo/backend-seventwo
+            APP_DIR=/srv/infra/seventwo/seventwo-backend
             DOMINIO=api.seventwo.tech
             DB_NAME=seventwo
             PG_CONTAINER=postgres_central
@@ -54,15 +54,15 @@ jobs:
             cd "$APP_DIR"
 
             echo "→ Preservando .env..."
-            cp .env /tmp/backend-seventwo.env.bak 2>/dev/null || true
+            cp .env /tmp/seventwo-backend.env.bak 2>/dev/null || true
 
             echo "→ Actualizando código..."
             git_auth fetch origin main
             git reset --hard origin/main
             git clean -fd -e .env
 
-            cp /tmp/backend-seventwo.env.bak .env 2>/dev/null || true
-            rm -f /tmp/backend-seventwo.env.bak
+            cp /tmp/seventwo-backend.env.bak .env 2>/dev/null || true
+            rm -f /tmp/seventwo-backend.env.bak
 
             if [ ! -f .env ]; then
               echo "❌ Falta .env — créalo desde .env.example en $APP_DIR y vuelve a deployar"

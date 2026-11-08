@@ -68,7 +68,7 @@ src/
 
 ## Producción (VPS)
 
-Cada push a `main` lanza `.github/workflows/deploy.yml`, que despliega en `/srv/infra/seventwo/backend-seventwo`:
+Cada push a `main` lanza `.github/workflows/deploy.yml`, que despliega en `/srv/infra/seventwo/seventwo-backend`:
 
 1. Actualiza el código conservando el `.env`.
 2. Crea la base `seventwo` en `postgres_central` si no existe.
