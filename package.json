@@ -11,6 +11,8 @@
     "dev": "node --watch --env-file-if-exists=.env src/index.js",
     "start": "node src/index.js",
     "migrate": "node --env-file-if-exists=.env src/database/migrate.js",
+    "seed:dev": "node --env-file-if-exists=.env src/scripts/seed-dev.js",
+    "rol": "node --env-file-if-exists=.env src/scripts/rol.js",
     "test": "node --import ./test/env.js --test --test-concurrency=1 \"test/**/*.test.js\"",
     "test:db": "docker exec seventwo-postgres-dev psql -U seventwo -d seventwo -c \"CREATE DATABASE seventwo_test\"",
     "db:up": "docker compose -f docker-compose.dev.yml up -d",

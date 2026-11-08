@@ -1,6 +1,7 @@
 // src/routes/auth.routes.js — límites según docs/AUTH.md §7.
 import { Router } from "express";
 import {
+  actualizarPerfil,
   login,
   logout,
   logoutTodo,
@@ -74,5 +75,11 @@ router.post("/auth/refresh", limSesion, refresh);
 router.post("/auth/logout", limSesion, logout);
 router.post("/auth/logout-todo", limSesion, verificarToken, logoutTodo);
 router.get("/auth/me", verificarToken, me);
+router.patch(
+  "/auth/me",
+  verificarToken,
+  rateLimit({ nombre: "perfil", max: 30, ventanaSeg: DIEZ_MIN, clave: (req) => req.usuario?.id }),
+  actualizarPerfil,
+);
 
 export default router;

@@ -8,6 +8,7 @@ import { FRONTEND_URLS, IS_PROD } from "./config.js";
 import { pool } from "./db.js";
 import { errorHandler, notFoundHandler } from "./middleware/error.middleware.js";
 import authRoutes from "./routes/auth.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 
 export function crearApp() {
   const app = express();
@@ -40,6 +41,7 @@ export function crearApp() {
   });
 
   app.use(authRoutes);
+  app.use(adminRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

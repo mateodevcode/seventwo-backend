@@ -191,6 +191,34 @@ export const logoutTodo = async (req, res) => {
   res.json({ success: true, message: "Cerraste sesión en todos tus dispositivos." });
 };
 
+// ── PATCH /auth/me { name?, telefono? } (access token) ──────────
+// Perfil propio. El email no se cambia aquí (exigiría reverificar).
+export const actualizarPerfil = async (req, res) => {
+  const { name, telefono } = req.body ?? {};
+  const cambios = {};
+
+  if (name !== undefined) {
+    const n = typeof name === "string" ? name.trim().replace(/\s+/g, " ") : "";
+    if (n.length < 2 || n.length > 100) throw badRequest("El nombre debe tener entre 2 y 100 caracteres.");
+    cambios.name = n;
+  }
+  if (telefono !== undefined) {
+    const t = typeof telefono === "string" ? telefono.trim() : "";
+    if (t && !/^\+?[\d\s().-]{7,20}$/.test(t)) throw badRequest("El teléfono no es válido.");
+    cambios.telefono = t || null;
+  }
+  if (!Object.keys(cambios).length) throw badRequest("No hay cambios que guardar.");
+
+  const claves = Object.keys(cambios);
+  const { rows: [usuario] } = await pool.query(
+    `UPDATE usuarios SET ${claves.map((k, i) => `${k} = $${i + 2}`).join(", ")}
+      WHERE id = $1 RETURNING *`,
+    [req.usuario.id, ...claves.map((k) => cambios[k])],
+  );
+  if (!usuario) throw notFound("Usuario no encontrado.");
+  res.json({ success: true, message: "Perfil actualizado.", data: usuarioPublico(usuario) });
+};
+
 // ── GET /auth/me (access token) ─────────────────────────────────
 export const me = async (req, res) => {
   const { rows: [usuario] } = await pool.query("SELECT * FROM usuarios WHERE id = $1", [req.usuario.id]);
