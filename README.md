@@ -44,6 +44,16 @@ Los tests vacían las tablas: se niegan a correr contra una BD cuyo nombre no te
 | PATCH | `/auth/password` | Bearer `{ actual, nueva }` → cambia la contraseña, cierra las demás sesiones y devuelve una nueva |
 | GET | `/auth/google?next=/ruta` | navegación → redirige a Google |
 | GET | `/auth/google/callback` | Google vuelve aquí → redirige al front (`/auth/google/callback`, `/login/otp` o `/login?error=`) |
+| POST | `/solicitudes` | público (o Bearer) → solicitud de presupuesto; confirma por email y avisa al equipo |
+| GET | `/solicitudes/mias` · `/solicitudes/mias/:codigo` | Bearer → mis solicitudes y su conversación |
+| POST | `/solicitudes/mias/:codigo/mensajes` | Bearer `{ cuerpo }` → el cliente contesta |
+| GET | `/admin/solicitudes` · `/admin/solicitudes/:id` | admin+ → listado con conteos y detalle |
+| POST | `/admin/solicitudes/:id/mensajes` | admin+ `{ cuerpo, interno? }` → responder o dejar una nota interna |
+| PATCH | `/admin/solicitudes/:id` | admin+ `{ estado?, asignado_a? }` |
+| GET | `/notificaciones` · `/notificaciones/config` | Bearer → campana (no leídas) y canales en vivo disponibles |
+| POST | `/notificaciones/leer` | Bearer `{ ids? }` → marcar leídas |
+| POST | `/notificaciones/socket-token` | Bearer → JWT de socket-core (solo escucha, 10 min) |
+| POST · DELETE | `/notificaciones/push` | Bearer → registrar o quitar la suscripción Web Push de este dispositivo |
 | POST | `/auth/refresh` | cookie → `{ usuario, accessToken }` y rota la cookie |
 | POST | `/auth/logout` | cookie → revoca la sesión actual |
 | POST | `/auth/logout-todo` | Bearer → revoca todas las sesiones |
