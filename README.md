@@ -68,6 +68,12 @@ src/
 
 ## Producción (VPS)
 
-`docker compose up -d --build` levanta la API en `127.0.0.1:4000` dentro de la red de Postgres
-(`DB_NETWORK`, por defecto `central_network`). Las migraciones se aplican al arrancar el contenedor.
-nginx hace de proxy para `api.seventwo.tech` con TLS.
+Cada push a `main` lanza `.github/workflows/deploy.yml`, que despliega en `/srv/infra/seventwo/backend-seventwo`:
+
+1. Actualiza el código conservando el `.env`.
+2. Crea la base `seventwo` en `postgres_central` si no existe.
+3. Ejecuta `docker compose up -d --build`, que levanta la API en `127.0.0.1:4000` dentro de `central_network`. Las migraciones se aplican al arrancar el contenedor.
+4. Saca o renueva el certificado con certbot e instala `nginx/seventwo-api.conf` para `api.seventwo.tech`.
+5. Comprueba que `/health` responde.
+
+Lo único manual es crear el `.env` en el VPS. La guía completa (DNS, secrets, variables y orden de deploy) está en `seventwo-frontend/docs/DEPLOY.md`.

@@ -1,0 +1,121 @@
+# .github/workflows/deploy.yml — Backend → VPS /srv/infra/seventwo/backend-seventwo
+# Mismo patrón que backend-inmobitwo. Secrets del repo: VPS_HOST, VPS_USER, VPS_SSH_KEY.
+# Lo único manual en el VPS es el archivo .env (ver docs/DEPLOY.md del frontend).
+name: Deploy Backend Seventwo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-seventwo-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: SSH Deploy to VPS
+        uses: appleboy/ssh-action@v1
+        env:
+          # Token efímero del job: permite clonar/actualizar aunque el repo sea
+          # privado. Va como cabecera por comando (-c http.extraheader), así no
+          # queda escrito en .git/config, FETCH_HEAD ni el reflog del VPS.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: GH_TOKEN,REPO_URL
+          command_timeout: 25m
+          script: |
+            set -e
+
+            APP_DIR=/srv/infra/seventwo/backend-seventwo
+            DOMINIO=api.seventwo.tech
+            DB_NAME=seventwo
+            PG_CONTAINER=postgres_central
+            PG_ADMIN=adminst
+
+            AUTH="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+            git_auth() { git -c "http.https://github.com/.extraheader=$AUTH" "$@"; }
+
+            echo "🚀 Despliegue Backend → $DOMINIO"
+
+            # 0. Asegurar repo en $APP_DIR
+            if [ ! -d "$APP_DIR/.git" ]; then
+              echo "→ Clonando repo por primera vez..."
+              mkdir -p "$(dirname "$APP_DIR")"
+              git_auth clone "$REPO_URL" "$APP_DIR"
+            fi
+            cd "$APP_DIR"
+
+            echo "→ Preservando .env..."
+            cp .env /tmp/backend-seventwo.env.bak 2>/dev/null || true
+
+            echo "→ Actualizando código..."
+            git_auth fetch origin main
+            git reset --hard origin/main
+            git clean -fd -e .env
+
+            cp /tmp/backend-seventwo.env.bak .env 2>/dev/null || true
+            rm -f /tmp/backend-seventwo.env.bak
+
+            if [ ! -f .env ]; then
+              echo "❌ Falta .env — créalo desde .env.example en $APP_DIR y vuelve a deployar"
+              exit 1
+            fi
+
+            echo "→ Verificando red y BD ($DB_NAME en $PG_CONTAINER, sin tocar datos)..."
+            docker network inspect central_network >/dev/null
+            docker exec "$PG_CONTAINER" psql -U "$PG_ADMIN" -d postgres -tc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" | grep -q 1 || \
+              docker exec "$PG_CONTAINER" psql -U "$PG_ADMIN" -d postgres -c "CREATE DATABASE $DB_NAME;"
+
+            echo "→ Build y levantada (las migraciones corren al arrancar el contenedor)..."
+            docker compose build api
+            docker compose up -d --remove-orphans
+
+            echo "→ SSL (certbot, certificado independiente, con reintentos)..."
+            if [ ! -f /etc/letsencrypt/live/$DOMINIO/fullchain.pem ]; then
+              echo "→ Certificado no existe — generándolo con plugin nginx (cero downtime)..."
+              OK=0
+              for i in 1 2 3; do
+                if sudo certbot certonly --nginx -d $DOMINIO --non-interactive --agree-tos -m admin@seventwo.tech; then
+                  OK=1
+                  break
+                fi
+                echo "⚠️ intento $i falló (otro certbot en curso o DNS sin propagar?) — reintentando en 20s..."
+                sleep 20
+              done
+              [ "$OK" = "1" ] || { echo "❌ certbot falló 3 veces (¿el registro A de $DOMINIO apunta al VPS?)"; exit 1; }
+            else
+              echo "→ Certificado ya existe — renovando si es necesario (tolerante: el timer de certbot lo cubre)..."
+              sudo certbot renew --quiet || echo "⚠️ renew omitido (lock ocupado o nada que renovar)"
+            fi
+
+            echo "→ Nginx ($DOMINIO → 127.0.0.1:4000)..."
+            sudo cp nginx/seventwo-api.conf /etc/nginx/sites-available/seventwo-api
+            sudo ln -sf ../sites-available/seventwo-api /etc/nginx/sites-enabled/seventwo-api
+            sudo nginx -t && sudo systemctl reload nginx
+
+            echo "→ Limpieza imágenes viejas..."
+            docker image prune -f
+
+            echo "→ Estado..."
+            docker compose ps
+            i=1
+            until curl -sf "https://$DOMINIO/health" | grep -q '"db":"ok"'; do
+              if [ $i -ge 12 ]; then
+                echo "❌ /health no responde OK tras 12 intentos. Logs:"
+                docker logs --tail 60 seventwo-backend || true
+                exit 1
+              fi
+              echo "… esperando /health (intento $i/12)"
+              sleep 5
+              i=$((i + 1))
+            done
+            curl -s "https://$DOMINIO/health"; echo
+            echo "✅ Deploy Backend OK"

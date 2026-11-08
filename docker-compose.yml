@@ -1,6 +1,8 @@
-# Producción en el VPS. La API se une a la red donde vive Postgres
-# (por defecto `central_network`, igual que inmobitwo) y solo escucha en
-# 127.0.0.1: nginx hace de proxy TLS para api.seventwo.tech.
+# backend-seventwo en VPS: /srv/infra/seventwo/backend-seventwo
+# La API se une a la red donde vive postgres_central (central_network, igual
+# que inmobitwo) y solo escucha en 127.0.0.1: nginx hace de proxy TLS para
+# api.seventwo.tech (nginx/seventwo-api.conf).
+# Las migraciones se aplican al arrancar el contenedor (CMD del Dockerfile).
 services:
   api:
     build: .
@@ -13,14 +15,14 @@ services:
       - "127.0.0.1:4000:4000"
     restart: unless-stopped
     networks:
-      - db_network
+      - central_network
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/health"]
       interval: 30s
       timeout: 5s
       retries: 3
+      start_period: 20s
 
 networks:
-  db_network:
+  central_network:
     external: true
-    name: ${DB_NETWORK:-central_network}
