@@ -24,6 +24,7 @@ import {
   solicitarReset,
   validarCodigoReset,
 } from "../controllers/password.controllers.js";
+import { callbackGoogle, iniciarGoogle } from "../controllers/google.controllers.js";
 import { verificarToken } from "../middleware/auth.middleware.js";
 import { porEmail, rateLimit } from "../middleware/rateLimit.middleware.js";
 
@@ -63,6 +64,11 @@ router.post("/auth/password/solicitar", limReset, limResetEmail, solicitarReset)
 router.post("/auth/password/validar", limReset, limResetEmail, validarCodigoReset);
 router.post("/auth/password/restablecer", limReset, restablecerPassword);
 router.patch("/auth/password", verificarToken, limCambio, cambiarPassword);
+
+// Google OAuth
+const limGoogle = rateLimit({ nombre: "google", max: 20, ventanaSeg: 60 });
+router.get("/auth/google", limGoogle, iniciarGoogle);
+router.get("/auth/google/callback", limGoogle, callbackGoogle);
 
 router.post("/auth/refresh", limSesion, refresh);
 router.post("/auth/logout", limSesion, logout);

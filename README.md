@@ -42,6 +42,8 @@ Los tests vacían las tablas: se niegan a correr contra una BD cuyo nombre no te
 | POST | `/auth/password/validar` | `{ email, codigo }` → `{ resetToken }` de un solo uso (10 min) |
 | POST | `/auth/password/restablecer` | `{ resetToken, password }` → nueva contraseña; desbloquea la cuenta y cierra sus sesiones |
 | PATCH | `/auth/password` | Bearer `{ actual, nueva }` → cambia la contraseña, cierra las demás sesiones y devuelve una nueva |
+| GET | `/auth/google?next=/ruta` | navegación → redirige a Google |
+| GET | `/auth/google/callback` | Google vuelve aquí → redirige al front (`/auth/google/callback`, `/login/otp` o `/login?error=`) |
 | POST | `/auth/refresh` | cookie → `{ usuario, accessToken }` y rota la cookie |
 | POST | `/auth/logout` | cookie → revoca la sesión actual |
 | POST | `/auth/logout-todo` | Bearer → revoca todas las sesiones |
