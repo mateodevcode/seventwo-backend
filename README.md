@@ -15,6 +15,28 @@ npm run dev               # http://localhost:4000/health
 
 Si no configuras el SMTP, los emails (OTP, reset…) se imprimen en la consola.
 
+## Tests
+
+```bash
+npm run test:db           # una sola vez: crea la BD seventwo_test en el contenedor
+npm test                  # node:test, de punta a punta contra seventwo_test
+```
+
+Los tests vacían las tablas: se niegan a correr contra una BD cuyo nombre no termine en `_test`.
+
+## Endpoints disponibles
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/auth/registro` | `{ name, email, password, telefono? }` → crea la cuenta y envía el código de verificación |
+| POST | `/auth/verificar-email` | `{ email, codigo }` → verifica el correo y emite la sesión |
+| POST | `/auth/verificar-email/reenviar` | `{ email }` → reenvía el código (cooldown de 60 s) |
+| POST | `/auth/login` | `{ email, password }` → sesión, `requiereVerificacion` o `requiereOTP` |
+| POST | `/auth/refresh` | cookie → `{ usuario, accessToken }` y rota la cookie |
+| POST | `/auth/logout` | cookie → revoca la sesión actual |
+| POST | `/auth/logout-todo` | Bearer → revoca todas las sesiones |
+| GET | `/auth/me` | Bearer → usuario actual |
+
 ## Estructura
 
 ```

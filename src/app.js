@@ -7,6 +7,7 @@ import morgan from "morgan";
 import { FRONTEND_URLS, IS_PROD } from "./config.js";
 import { pool } from "./db.js";
 import { errorHandler, notFoundHandler } from "./middleware/error.middleware.js";
+import authRoutes from "./routes/auth.routes.js";
 
 export function crearApp() {
   const app = express();
@@ -26,7 +27,7 @@ export function crearApp() {
   );
   app.use(cookieParser());
   app.use(express.json({ limit: "100kb" }));
-  if (!IS_PROD) app.use(morgan("dev"));
+  if (!IS_PROD && process.env.NODE_ENV !== "test") app.use(morgan("dev"));
 
   app.get("/health", async (req, res) => {
     let db = "ok";
@@ -38,7 +39,7 @@ export function crearApp() {
     res.status(db === "ok" ? 200 : 503).json({ status: db === "ok" ? "ok" : "degraded", service: "seventwo-backend", db });
   });
 
-  // Rutas (fase 2+): app.use(authRoutes) ...
+  app.use(authRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

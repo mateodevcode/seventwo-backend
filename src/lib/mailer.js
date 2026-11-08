@@ -11,6 +11,9 @@ import {
 
 let transporter;
 
+// Con NODE_ENV=test los emails simulados se guardan aquí (los tests leen los códigos).
+export const bandejaPruebas = [];
+
 export const createTransporter = () => {
   transporter ??= nodemailer.createTransport({
     host: "smtp-relay.brevo.com",
@@ -26,6 +29,10 @@ export const createTransporter = () => {
  * @param {{ to: string, subject: string, html: string, text?: string }} email
  */
 export async function enviarEmail({ to, subject, html, text }) {
+  if (process.env.NODE_ENV === "test") {
+    bandejaPruebas.push({ to, subject, html, text });
+    return { simulado: true };
+  }
   if (!emailConfigurado()) {
     console.log(
       `\n📧 [email simulado] Para: ${to}\n   Asunto: ${subject}\n   ${text || html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 300)}\n`,
