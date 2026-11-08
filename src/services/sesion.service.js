@@ -7,6 +7,7 @@ import { pool } from "../db.js";
 import { COOKIE_DOMAIN, IS_PROD, JWT_REFRESH_SECRET, JWT_SECRET } from "../config.js";
 import { sha256 } from "../lib/crypto.js";
 import { unauthorized } from "../lib/errors.js";
+import { vincularClientePorEmail } from "./clientes.service.js";
 
 export const COOKIE_REFRESH = "refresh_token";
 const ACCESS_TTL = "15m";
@@ -76,6 +77,10 @@ export async function emitirSesion(req, res, usuario) {
       "UPDATE solicitudes SET usuario_id = $1 WHERE email = $2 AND usuario_id IS NULL",
       [usuario.id, usuario.email],
     );
+    // Ficha de cliente creada por el equipo sin cuenta → a esta cuenta, que pasa
+    // a "cliente" (docs/CLIENTES.md §3.2). El token ya sale con el rol nuevo.
+    const rolNuevo = await vincularClientePorEmail(usuario);
+    if (rolNuevo) usuario = { ...usuario, rol: rolNuevo };
   }
   res.cookie(COOKIE_REFRESH, refreshToken, opcionesCookie());
   return { usuario: usuarioPublico(usuario), accessToken: generarAccessToken(usuario) };

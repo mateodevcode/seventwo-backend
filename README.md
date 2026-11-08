@@ -54,6 +54,14 @@ Los tests vacían las tablas: se niegan a correr contra una BD cuyo nombre no te
 | POST | `/notificaciones/leer` | Bearer `{ ids? }` → marcar leídas |
 | POST | `/notificaciones/socket-token` | Bearer → JWT de socket-core (solo escucha, 10 min) |
 | POST · DELETE | `/notificaciones/push` | Bearer → registrar o quitar la suscripción Web Push de este dispositivo |
+| GET · PATCH | `/clientes/yo` | Bearer → mi ficha de cliente (`null` si no tengo) y edición de los datos de facturación |
+| GET | `/clientes/yo/resumen` | Bearer → proyectos activos con el siguiente hito, conteos y actividad visible |
+| GET | `/proyectos/mios` · `/proyectos/mios/:codigo` | Bearer → mis proyectos y su detalle (hitos) |
+| GET · POST | `/admin/clientes` | admin+ → listado con conteos · alta manual (vincula la cuenta verificada con ese email) |
+| GET · PATCH | `/admin/clientes/:id` | admin+ → ficha completa (proyectos, solicitudes, historial) · edición, incluidas notas internas y estado |
+| GET · POST · PATCH | `/admin/servicios[/:id]` | admin+ → catálogo de servicios y precios (`?todos=1` incluye los inactivos) |
+| POST · GET · PATCH | `/admin/proyectos[/:id]` | admin+ → crear, ver y editar proyectos e hitos (avisa al cliente de estado e hitos) |
+| POST | `/admin/solicitudes/:id/convertir` | admin+ `{ cliente, proyecto }` → crea o completa la ficha, sube a cliente y crea el proyecto |
 | POST | `/auth/refresh` | cookie → `{ usuario, accessToken }` y rota la cookie |
 | POST | `/auth/logout` | cookie → revoca la sesión actual |
 | POST | `/auth/logout-todo` | Bearer → revoca todas las sesiones |

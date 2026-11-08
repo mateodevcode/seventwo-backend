@@ -79,8 +79,13 @@ async function detalle(s) {
   const { rows: equipo } = await pool.query(
     "SELECT id, name FROM usuarios WHERE rol IN ('admin', 'superadmin') AND NOT bloqueado ORDER BY name",
   );
+  // ¿Ya es un proyecto? (botón "Convertir en proyecto" o enlace al proyecto)
+  const { rows: [proyecto] } = await pool.query(
+    "SELECT id, codigo, cliente_id FROM proyectos WHERE solicitud_id = $1",
+    [s.id],
+  );
   const { ip, user_agent, ...publica } = s;
-  return { ...publica, cuenta, mensajes, equipo };
+  return { ...publica, cuenta, mensajes, equipo, proyecto: proyecto ?? null };
 }
 
 // ── GET /admin/solicitudes/:id ──────────────────────────────────

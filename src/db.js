@@ -2,6 +2,11 @@
 import pg from "pg";
 import { DB_CONFIG } from "./config.js";
 
+// DATE como 'YYYY-MM-DD' (sin desfase de zona horaria) y NUMERIC como número
+// (importes con 2 decimales, muy por debajo de la precisión de un double).
+pg.types.setTypeParser(1082, (s) => s);
+pg.types.setTypeParser(1700, (s) => (s === null ? null : Number.parseFloat(s)));
+
 export const pool = new pg.Pool({
   ...DB_CONFIG,
   max: 10,
