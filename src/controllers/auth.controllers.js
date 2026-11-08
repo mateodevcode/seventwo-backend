@@ -3,14 +3,9 @@
 import bcrypt from "bcryptjs";
 import { pool } from "../db.js";
 import { HttpError, badRequest, conflict, notFound, unauthorized } from "../lib/errors.js";
-import { enviarEmail } from "../lib/mailer.js";
 import * as plantillas from "../emails/index.js";
-import {
-  cooldownRestante,
-  emitirCodigo,
-  invalidarCodigos,
-  verificarCodigo,
-} from "../services/codigos.service.js";
+import { cooldownRestante, verificarCodigo } from "../services/codigos.service.js";
+import { enviarCodigo, notificar } from "../services/envio.service.js";
 import {
   cerrarSesion,
   emitirSesion,
@@ -26,20 +21,8 @@ const MAX_INTENTOS_PASSWORD = 5;
 // usuario no existe, para que el tiempo de respuesta no delate si el email está.
 const HASH_FALSO = bcrypt.hashSync("seventwo-hash-de-relleno-no-usar", BCRYPT_COSTE);
 
-const buscarPorEmail = async (email) =>
+export const buscarPorEmail = async (email) =>
   (await pool.query("SELECT * FROM usuarios WHERE email = $1", [email])).rows[0];
-
-// Emite un código y lo envía. Si el email falla invalida el código y lanza 502.
-async function enviarCodigo(usuario, tipo, plantilla, opciones = {}) {
-  const codigo = await emitirCodigo({ usuarioId: usuario.id, tipo, ...opciones });
-  try {
-    await enviarEmail({ to: usuario.email, ...plantilla({ name: usuario.name, codigo }) });
-  } catch (error) {
-    console.error(`❌ No se pudo enviar el email (${tipo}) a ${usuario.email}:`, error.message);
-    await invalidarCodigos(usuario.id, tipo);
-    throw new HttpError(502, "No pudimos enviar el código. Intenta de nuevo en unos minutos.");
-  }
-}
 
 // ── POST /auth/registro ─────────────────────────────────────────
 export const registro = async (req, res) => {
@@ -149,9 +132,7 @@ export const login = async (req, res) => {
       );
       if (u.bloqueado) {
         await revocarTodas(usuario.id);
-        enviarEmail({ to: usuario.email, ...plantillas.cuentaBloqueada({ name: usuario.name }) }).catch((e) =>
-          console.error("❌ Email de cuenta bloqueada no enviado:", e.message),
-        );
+        notificar(usuario, plantillas.cuentaBloqueada);
       }
     }
     throw credencialesMal();

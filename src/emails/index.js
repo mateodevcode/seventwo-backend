@@ -32,6 +32,56 @@ export const codigoOtpLogin = ({ name, codigo }) => ({
   }),
 });
 
+export const codigoOtpActivar = ({ name, codigo }) => ({
+  subject: `${codigo} es tu código para activar la verificación en dos pasos`,
+  text: `Tu código para activar la verificación en dos pasos de Seventwo es ${codigo}. Vence en 10 minutos.`,
+  html: layout({
+    titulo: "Activar verificación en dos pasos",
+    preheader: `Tu código es ${codigo}`,
+    contenido: `${hola(name)}
+      <p>Para activar la <strong>verificación en dos pasos</strong> confirma que recibes nuestros correos con este código:</p>
+      ${bloqueCodigo(codigo)}
+      <p style="color:#71717a;font-size:13px;">Vence en 10 minutos. Si no lo pediste tú, ignora este mensaje.</p>`,
+  }),
+});
+
+export const codigoOtpDesactivar = ({ name, codigo }) => ({
+  subject: `${codigo} es tu código para desactivar la verificación en dos pasos`,
+  text: `Tu código para desactivar la verificación en dos pasos de Seventwo es ${codigo}. Vence en 10 minutos. Si no fuiste tú, no lo compartas.`,
+  html: layout({
+    titulo: "Desactivar verificación en dos pasos",
+    preheader: `Tu código es ${codigo}`,
+    contenido: `${hola(name)}
+      <p>Recibimos una solicitud para <strong>desactivar</strong> la verificación en dos pasos de tu cuenta. Tu código es:</p>
+      ${bloqueCodigo(codigo)}
+      <p style="color:#71717a;font-size:13px;">Vence en 10 minutos. Si no fuiste tú, no compartas este código con nadie.</p>`,
+  }),
+});
+
+export const otpActivado = ({ name }) => ({
+  subject: "Activaste la verificación en dos pasos",
+  text: "Desde ahora te pediremos un código por email cada vez que inicies sesión en Seventwo.",
+  html: layout({
+    titulo: "Verificación en dos pasos activada",
+    contenido: `${hola(name)}
+      <p>Activaste la <strong>verificación en dos pasos</strong>. Desde ahora te enviaremos un código a este correo cada vez que inicies sesión.</p>
+      <p style="color:#71717a;font-size:13px;">Si no fuiste tú, cambia tu contraseña de inmediato:
+      <a href="${escapeHtml(`${FRONTEND_URL}/olvide-contrasena`)}">restablecer contraseña</a>.</p>`,
+  }),
+});
+
+export const otpDesactivado = ({ name }) => ({
+  subject: "Desactivaste la verificación en dos pasos",
+  text: "La verificación en dos pasos de tu cuenta Seventwo quedó desactivada. Si no fuiste tú, cambia tu contraseña.",
+  html: layout({
+    titulo: "Verificación en dos pasos desactivada",
+    contenido: `${hola(name)}
+      <p>La <strong>verificación en dos pasos</strong> de tu cuenta quedó desactivada. Ya no te pediremos un código al iniciar sesión.</p>
+      <p style="color:#71717a;font-size:13px;">Si no fuiste tú, alguien tiene acceso a tu cuenta:
+      <a href="${escapeHtml(`${FRONTEND_URL}/olvide-contrasena`)}">restablece tu contraseña</a> y vuelve a activarla.</p>`,
+  }),
+});
+
 export const cuentaBloqueada = ({ name }) => {
   const url = `${FRONTEND_URL}/olvide-contrasena`;
   return {

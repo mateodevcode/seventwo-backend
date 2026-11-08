@@ -69,6 +69,17 @@ export async function emitirCodigo({ usuarioId, tipo, payload = null, ignorarCoo
   return codigo;
 }
 
+// ¿Hay un código vigente (sin usar y sin caducar) de ese tipo?
+export async function hayCodigoActivo(usuarioId, tipo, db = pool) {
+  const { rowCount } = await db.query(
+    `SELECT 1 FROM auth_codigos
+      WHERE usuario_id = $1 AND tipo = $2 AND usado_en IS NULL AND expira_en > now()
+      LIMIT 1`,
+    [usuarioId, tipo],
+  );
+  return rowCount > 0;
+}
+
 // Invalida los códigos activos de un tipo (p. ej. si falló el envío del email).
 export async function invalidarCodigos(usuarioId, tipo, db = pool) {
   await db.query(

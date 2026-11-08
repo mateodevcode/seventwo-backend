@@ -10,6 +10,14 @@ import {
   registro,
   verificarEmail,
 } from "../controllers/auth.controllers.js";
+import {
+  activarOtp,
+  confirmarActivarOtp,
+  confirmarDesactivarOtp,
+  desactivarOtp,
+  reenviarOtpLogin,
+  verificarOtpLogin,
+} from "../controllers/otp.controllers.js";
 import { verificarToken } from "../middleware/auth.middleware.js";
 import { porEmail, rateLimit } from "../middleware/rateLimit.middleware.js";
 
@@ -27,6 +35,18 @@ router.post("/auth/registro", limRegistro, registro);
 router.post("/auth/verificar-email", limVerificar, limVerificarEmail, verificarEmail);
 router.post("/auth/verificar-email/reenviar", limVerificar, limVerificarEmail, reenviarVerificacion);
 router.post("/auth/login", limLoginIp, limLoginEmail, login);
+
+// Segundo factor
+const limOtp = rateLimit({ nombre: "otp", max: 10, ventanaSeg: DIEZ_MIN });
+const limOtpEmail = rateLimit({ nombre: "otp-email", max: 10, ventanaSeg: DIEZ_MIN, clave: porEmail });
+const limOtpUsuario = rateLimit({ nombre: "otp-gestion", max: 10, ventanaSeg: DIEZ_MIN, clave: (req) => req.usuario?.id });
+
+router.post("/auth/otp/verificar", limOtp, limOtpEmail, verificarOtpLogin);
+router.post("/auth/otp/reenviar", limOtp, limOtpEmail, reenviarOtpLogin);
+router.post("/auth/otp/activar", verificarToken, limOtpUsuario, activarOtp);
+router.post("/auth/otp/activar/confirmar", verificarToken, limOtpUsuario, confirmarActivarOtp);
+router.post("/auth/otp/desactivar", verificarToken, limOtpUsuario, desactivarOtp);
+router.post("/auth/otp/desactivar/confirmar", verificarToken, limOtpUsuario, confirmarDesactivarOtp);
 
 router.post("/auth/refresh", limSesion, refresh);
 router.post("/auth/logout", limSesion, logout);

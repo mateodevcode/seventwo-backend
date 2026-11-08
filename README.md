@@ -32,6 +32,12 @@ Los tests vacían las tablas: se niegan a correr contra una BD cuyo nombre no te
 | POST | `/auth/verificar-email` | `{ email, codigo }` → verifica el correo y emite la sesión |
 | POST | `/auth/verificar-email/reenviar` | `{ email }` → reenvía el código (cooldown de 60 s) |
 | POST | `/auth/login` | `{ email, password }` → sesión, `requiereVerificacion` o `requiereOTP` |
+| POST | `/auth/otp/verificar` | `{ email, codigo }` → completa un login con `requiereOTP` |
+| POST | `/auth/otp/reenviar` | `{ email }` → reenvía el OTP (solo si hay un login pendiente) |
+| POST | `/auth/otp/activar` | Bearer → envía el código de activación |
+| POST | `/auth/otp/activar/confirmar` | Bearer `{ codigo }` → activa el 2º factor |
+| POST | `/auth/otp/desactivar` | Bearer `{ password }` → desactiva; en cuentas solo de Google devuelve `requiereCodigo` |
+| POST | `/auth/otp/desactivar/confirmar` | Bearer `{ codigo }` → desactiva (cuentas solo de Google) |
 | POST | `/auth/refresh` | cookie → `{ usuario, accessToken }` y rota la cookie |
 | POST | `/auth/logout` | cookie → revoca la sesión actual |
 | POST | `/auth/logout-todo` | Bearer → revoca todas las sesiones |
