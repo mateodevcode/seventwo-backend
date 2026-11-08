@@ -38,6 +38,10 @@ Los tests vacían las tablas: se niegan a correr contra una BD cuyo nombre no te
 | POST | `/auth/otp/activar/confirmar` | Bearer `{ codigo }` → activa el 2º factor |
 | POST | `/auth/otp/desactivar` | Bearer `{ password }` → desactiva; en cuentas solo de Google devuelve `requiereCodigo` |
 | POST | `/auth/otp/desactivar/confirmar` | Bearer `{ codigo }` → desactiva (cuentas solo de Google) |
+| POST | `/auth/password/solicitar` | `{ email }` → código por email (respuesta genérica) |
+| POST | `/auth/password/validar` | `{ email, codigo }` → `{ resetToken }` de un solo uso (10 min) |
+| POST | `/auth/password/restablecer` | `{ resetToken, password }` → nueva contraseña; desbloquea la cuenta y cierra sus sesiones |
+| PATCH | `/auth/password` | Bearer `{ actual, nueva }` → cambia la contraseña, cierra las demás sesiones y devuelve una nueva |
 | POST | `/auth/refresh` | cookie → `{ usuario, accessToken }` y rota la cookie |
 | POST | `/auth/logout` | cookie → revoca la sesión actual |
 | POST | `/auth/logout-todo` | Bearer → revoca todas las sesiones |

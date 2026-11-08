@@ -52,6 +52,7 @@ export function cliente(base) {
   };
   return {
     post: (ruta, body, opts) => llamar("POST", ruta, { ...opts, body }),
+    patch: (ruta, body, opts) => llamar("PATCH", ruta, { ...opts, body }),
     get: (ruta, opts) => llamar("GET", ruta, opts),
     get cookie() { return cookie; },
     set cookie(v) { cookie = v; },

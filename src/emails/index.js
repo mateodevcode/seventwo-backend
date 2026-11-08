@@ -82,6 +82,31 @@ export const otpDesactivado = ({ name }) => ({
   }),
 });
 
+export const codigoResetPassword = ({ name, codigo }) => ({
+  subject: `${codigo} es tu código para restablecer tu contraseña`,
+  text: `Tu código para restablecer la contraseña de Seventwo es ${codigo}. Vence en 10 minutos. Si no lo pediste, ignora este mensaje.`,
+  html: layout({
+    titulo: "Restablecer contraseña",
+    preheader: `Tu código es ${codigo}`,
+    contenido: `${hola(name)}
+      <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta. Tu código es:</p>
+      ${bloqueCodigo(codigo)}
+      <p style="color:#71717a;font-size:13px;">Vence en 10 minutos. Si no lo pediste tú, ignora este mensaje: tu contraseña no cambiará.</p>`,
+  }),
+});
+
+export const passwordCambiada = ({ name }) => ({
+  subject: "Tu contraseña de Seventwo cambió",
+  text: `La contraseña de tu cuenta Seventwo se cambió y cerramos tus otras sesiones. Si no fuiste tú, restablécela ya: ${FRONTEND_URL}/olvide-contrasena`,
+  html: layout({
+    titulo: "Contraseña actualizada",
+    contenido: `${hola(name)}
+      <p>La contraseña de tu cuenta se cambió correctamente y <strong>cerramos las demás sesiones</strong> por seguridad.</p>
+      <p style="color:#71717a;font-size:13px;">Si no fuiste tú, restablécela de inmediato:</p>
+      ${boton(`${FRONTEND_URL}/olvide-contrasena`, "Restablecer contraseña")}`,
+  }),
+});
+
 export const cuentaBloqueada = ({ name }) => {
   const url = `${FRONTEND_URL}/olvide-contrasena`;
   return {

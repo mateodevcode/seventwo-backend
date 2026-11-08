@@ -18,6 +18,12 @@ import {
   reenviarOtpLogin,
   verificarOtpLogin,
 } from "../controllers/otp.controllers.js";
+import {
+  cambiarPassword,
+  restablecerPassword,
+  solicitarReset,
+  validarCodigoReset,
+} from "../controllers/password.controllers.js";
 import { verificarToken } from "../middleware/auth.middleware.js";
 import { porEmail, rateLimit } from "../middleware/rateLimit.middleware.js";
 
@@ -47,6 +53,16 @@ router.post("/auth/otp/activar", verificarToken, limOtpUsuario, activarOtp);
 router.post("/auth/otp/activar/confirmar", verificarToken, limOtpUsuario, confirmarActivarOtp);
 router.post("/auth/otp/desactivar", verificarToken, limOtpUsuario, desactivarOtp);
 router.post("/auth/otp/desactivar/confirmar", verificarToken, limOtpUsuario, confirmarDesactivarOtp);
+
+// Contraseña
+const limReset = rateLimit({ nombre: "reset", max: 5, ventanaSeg: DIEZ_MIN });
+const limResetEmail = rateLimit({ nombre: "reset-email", max: 5, ventanaSeg: DIEZ_MIN, clave: porEmail });
+const limCambio = rateLimit({ nombre: "password-cambio", max: 10, ventanaSeg: DIEZ_MIN, clave: (req) => req.usuario?.id });
+
+router.post("/auth/password/solicitar", limReset, limResetEmail, solicitarReset);
+router.post("/auth/password/validar", limReset, limResetEmail, validarCodigoReset);
+router.post("/auth/password/restablecer", limReset, restablecerPassword);
+router.patch("/auth/password", verificarToken, limCambio, cambiarPassword);
 
 router.post("/auth/refresh", limSesion, refresh);
 router.post("/auth/logout", limSesion, logout);
