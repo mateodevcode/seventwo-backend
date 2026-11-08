@@ -66,6 +66,7 @@ export function cliente(base) {
     post: (ruta, body, opts) => llamar("POST", ruta, { ...opts, body }),
     patch: (ruta, body, opts) => llamar("PATCH", ruta, { ...opts, body }),
     get: (ruta, opts) => llamar("GET", ruta, opts),
+    del: (ruta, opts) => llamar("DELETE", ruta, opts),
     jar,
     get cookie() { return jar.has("refresh_token") ? `refresh_token=${jar.get("refresh_token")}` : null; },
     set cookie(v) {

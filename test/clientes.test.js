@@ -297,4 +297,29 @@ describe("catálogo", () => {
     assert.equal((await adm.api.get("/admin/servicios", { token: adm.token })).body.data.length, 0);
     assert.equal((await adm.api.get("/admin/servicios?todos=1", { token: adm.token })).body.data.length, 1);
   });
+
+  test("eliminar: bloqueado con proyectos activos; al finalizarlos se borra y el proyecto conserva sus datos", async () => {
+    const adm = await cuenta("adm", "admin");
+    const laura = await cuenta("laura");
+    const { body: { data: s } } = await adm.api.post("/admin/servicios", { nombre: "Landing pro", precio_base: 2000000 }, { token: adm.token });
+    const { body: { data: c } } = await adm.api.post("/admin/clientes", { email: laura.email, nombre: "Laura" }, { token: adm.token });
+    const { body: { data: p } } = await adm.api.post("/admin/proyectos", {
+      cliente_id: c.id, nombre: "Landing Laura", servicio_id: s.id, estado: "en_curso",
+    }, { token: adm.token });
+
+    const lista = await adm.api.get("/admin/servicios", { token: adm.token });
+    assert.equal(lista.body.data[0].proyectos_activos, 1);
+
+    const bloqueado = await adm.api.del(`/admin/servicios/${s.id}`, { token: adm.token });
+    assert.equal(bloqueado.status, 409);
+    assert.match(bloqueado.body.error, new RegExp(p.codigo));
+
+    await adm.api.patch(`/admin/proyectos/${p.id}`, { estado: "finalizado" }, { token: adm.token });
+    const ok = await adm.api.del(`/admin/servicios/${s.id}`, { token: adm.token });
+    assert.equal(ok.status, 200);
+    const { rows: [proy] } = await pool.query("SELECT nombre, servicio_id FROM proyectos WHERE id = $1", [p.id]);
+    assert.deepEqual(proy, { nombre: "Landing Laura", servicio_id: null });
+    assert.equal((await adm.api.del(`/admin/servicios/${s.id}`, { token: adm.token })).status, 404);
+    assert.equal((await laura.api.del(`/admin/servicios/${s.id}`, { token: laura.token })).status, 403);
+  });
 });

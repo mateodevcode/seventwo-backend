@@ -35,6 +35,7 @@ router.patch("/admin/clientes/:id", ...soloEquipo, limAdmin, admin.editarCliente
 router.get("/admin/servicios", ...soloEquipo, limAdmin, admin.listarServicios);
 router.post("/admin/servicios", ...soloEquipo, limAdmin, admin.crearServicio);
 router.patch("/admin/servicios/:id", ...soloEquipo, limAdmin, admin.editarServicio);
+router.delete("/admin/servicios/:id", ...soloEquipo, limAdmin, admin.eliminarServicio);
 
 router.post("/admin/proyectos", ...soloEquipo, limAdmin, admin.crearProyectoAdmin);
 router.get("/admin/proyectos/:id", ...soloEquipo, limAdmin, admin.verProyecto);

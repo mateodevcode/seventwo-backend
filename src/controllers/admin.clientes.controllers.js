@@ -227,9 +227,37 @@ function validarServicio(body, parcial) {
 export const listarServicios = async (req, res) => {
   const todos = req.query.todos === "1";
   const { rows } = await pool.query(
-    `SELECT * FROM servicios_catalogo ${todos ? "" : "WHERE activo"} ORDER BY activo DESC, categoria, nombre`,
+    `SELECT s.*,
+            (SELECT count(*)::int FROM proyectos p WHERE p.servicio_id = s.id AND p.estado = ANY($1)) AS proyectos_activos,
+            (SELECT count(*)::int FROM proyectos p WHERE p.servicio_id = s.id) AS proyectos
+       FROM servicios_catalogo s ${todos ? "" : "WHERE s.activo"}
+      ORDER BY s.activo DESC, s.categoria, s.nombre`,
+    [PROYECTO_ACTIVO],
   );
   res.json({ success: true, data: rows });
+};
+
+// ── DELETE /admin/servicios/:id ──────────────────────────────────
+// No se puede borrar mientras algún proyecto que lo usa siga activo. Los
+// proyectos ya finalizados o cancelados conservan sus datos (se quedan sin
+// servicio de catálogo asociado).
+export const eliminarServicio = async (req, res) => {
+  const id = idValido(req.params.id, "Servicio no encontrado.");
+  const { rows: [s] } = await pool.query("SELECT id, nombre FROM servicios_catalogo WHERE id = $1", [id]);
+  if (!s) throw notFound("Servicio no encontrado.");
+  const { rows: activos } = await pool.query(
+    "SELECT codigo FROM proyectos WHERE servicio_id = $1 AND estado = ANY($2) ORDER BY codigo",
+    [id, PROYECTO_ACTIVO],
+  );
+  if (activos.length) {
+    throw conflict(
+      `No se puede eliminar «${s.nombre}» mientras lo usen proyectos activos: ${activos.map((p) => p.codigo).join(", ")}. ` +
+        "Finaliza o cancela esos proyectos primero, o desactiva el servicio para que no aparezca en proyectos nuevos.",
+    );
+  }
+  await pool.query("DELETE FROM servicios_catalogo WHERE id = $1", [id]);
+  console.log(`🗑️  Servicio: ${req.actor.email} eliminó «${s.nombre}»`);
+  res.json({ success: true, message: `Servicio «${s.nombre}» eliminado.` });
 };
 
 // ── POST /admin/servicios ────────────────────────────────────────
