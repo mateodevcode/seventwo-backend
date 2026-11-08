@@ -7,7 +7,21 @@ export const NODE_ENV = env.NODE_ENV || "development";
 export const IS_PROD = NODE_ENV === "production";
 export const PORT = Number(env.PORT) || 4000;
 
-export const DATABASE_URL = env.DATABASE_URL;
+// Conexión a Postgres: DATABASE_URL, o bien DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME
+// (convención de inmobitwo; evita codificar la contraseña en una URL).
+// Si están ambas, gana DATABASE_URL.
+export const DATABASE_URL = env.DATABASE_URL || undefined;
+export const DB_CONFIG = DATABASE_URL
+  ? { connectionString: DATABASE_URL }
+  : env.DB_HOST
+    ? {
+        host: env.DB_HOST,
+        port: Number(env.DB_PORT) || 5432,
+        user: env.DB_USER,
+        password: env.DB_PASSWORD,
+        database: env.DB_NAME,
+      }
+    : null;
 
 export const FRONTEND_URLS = String(env.FRONTEND_URL || "http://localhost:3000")
   .split(",")
@@ -35,7 +49,11 @@ export const googleConfigurado = () =>
 export function validarConfig() {
   const errores = [];
 
-  if (!DATABASE_URL) errores.push("DATABASE_URL es obligatoria.");
+  if (!DB_CONFIG) {
+    errores.push("Falta la base de datos: define DATABASE_URL o DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME.");
+  } else if (!DATABASE_URL) {
+    for (const k of ["DB_USER", "DB_PASSWORD", "DB_NAME"]) if (!env[k]) errores.push(`${k} es obligatoria.`);
+  }
 
   for (const [nombre, valor] of [
     ["JWT_SECRET", JWT_SECRET],

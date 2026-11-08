@@ -1,9 +1,9 @@
 // src/db.js — pool de conexiones a PostgreSQL.
 import pg from "pg";
-import { DATABASE_URL } from "./config.js";
+import { DB_CONFIG } from "./config.js";
 
 export const pool = new pg.Pool({
-  connectionString: DATABASE_URL,
+  ...DB_CONFIG,
   max: 10,
   idleTimeoutMillis: 30_000,
 });

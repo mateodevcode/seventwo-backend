@@ -45,11 +45,12 @@ jobs:
 
             echo "🚀 Despliegue Backend → $DOMINIO"
 
-            # 0. Asegurar repo en $APP_DIR
+            # 0. Asegurar repo en $APP_DIR (la carpeta puede existir ya con el .env subido a mano)
             if [ ! -d "$APP_DIR/.git" ]; then
-              echo "→ Clonando repo por primera vez..."
-              mkdir -p "$(dirname "$APP_DIR")"
-              git_auth clone "$REPO_URL" "$APP_DIR"
+              echo "→ Inicializando repo por primera vez en $APP_DIR..."
+              mkdir -p "$APP_DIR"
+              git -C "$APP_DIR" init -q -b main
+              git -C "$APP_DIR" remote add origin "$REPO_URL"
             fi
             cd "$APP_DIR"
 
