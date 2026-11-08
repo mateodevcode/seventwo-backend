@@ -42,6 +42,26 @@ export const GOOGLE_CLIENT_ID = env.GOOGLE_CLIENT_ID;
 export const GOOGLE_CLIENT_SECRET = env.GOOGLE_CLIENT_SECRET;
 export const GOOGLE_REDIRECT_URI = env.GOOGLE_REDIRECT_URI;
 
+// ── Notificaciones (docs/PRESUPUESTOS.md §6). Cada canal se activa solo si
+// sus variables existen; sin ellas, el resto funciona igual.
+// Buzón del equipo que recibe el email de cada solicitud nueva y las respuestas.
+export const EQUIPO_EMAIL = env.EQUIPO_EMAIL || env.BREVO_EMAIL_INFO || "info@seventwo.tech";
+
+export const SOCKET_CORE_URL = env.SOCKET_CORE_URL?.replace(/\/$/, "");
+export const SOCKET_CORE_API_KEY = env.SOCKET_CORE_API_KEY;
+export const SOCKET_CORE_CANAL = env.SOCKET_CORE_CANAL || "seventwo:notificaciones";
+
+export const VAPID_PUBLIC_KEY = env.VAPID_PUBLIC_KEY;
+export const VAPID_PRIVATE_KEY = env.VAPID_PRIVATE_KEY;
+export const VAPID_SUBJECT = env.VAPID_SUBJECT || "mailto:admin@seventwo.tech";
+
+export const TELEGRAM_BOT_TOKEN = env.TELEGRAM_BOT_TOKEN;
+export const TELEGRAM_CHAT_ID = env.TELEGRAM_CHAT_ID;
+
+export const socketConfigurado = () => Boolean(SOCKET_CORE_URL && SOCKET_CORE_API_KEY);
+export const pushConfigurado = () => Boolean(VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY);
+export const telegramConfigurado = () => Boolean(TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID);
+
 export const emailConfigurado = () => Boolean(BREVO_SMTP_EMAIL && BREVO_SMTP_PASS);
 export const googleConfigurado = () =>
   Boolean(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET && GOOGLE_REDIRECT_URI);
@@ -82,4 +102,10 @@ export function validarConfig() {
   if (!googleConfigurado()) {
     console.warn("⚠️  Google OAuth no configurado: /auth/google responderá 503.");
   }
+  const off = [
+    !socketConfigurado() && "socket-core (tiempo real)",
+    !pushConfigurado() && "Web Push",
+    !telegramConfigurado() && "Telegram",
+  ].filter(Boolean);
+  if (off.length) console.warn(`ℹ️  Canales de aviso desactivados: ${off.join(", ")}.`);
 }

@@ -69,6 +69,14 @@ export async function emitirSesion(req, res, usuario) {
     "UPDATE usuarios SET intentos_fallidos = 0, ultimo_login = now() WHERE id = $1",
     [usuario.id],
   );
+  // Solicitudes de presupuesto hechas sin sesión con este email → a su cuenta.
+  // Solo con email verificado (docs/PRESUPUESTOS.md §2.2).
+  if (usuario.email_verificado) {
+    await pool.query(
+      "UPDATE solicitudes SET usuario_id = $1 WHERE email = $2 AND usuario_id IS NULL",
+      [usuario.id, usuario.email],
+    );
+  }
   res.cookie(COOKIE_REFRESH, refreshToken, opcionesCookie());
   return { usuario: usuarioPublico(usuario), accessToken: generarAccessToken(usuario) };
 }

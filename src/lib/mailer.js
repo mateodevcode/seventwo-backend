@@ -26,11 +26,11 @@ export const createTransporter = () => {
 };
 
 /**
- * @param {{ to: string, subject: string, html: string, text?: string }} email
+ * @param {{ to: string, subject: string, html: string, text?: string, replyTo?: string }} email
  */
-export async function enviarEmail({ to, subject, html, text }) {
+export async function enviarEmail({ to, subject, html, text, replyTo }) {
   if (process.env.NODE_ENV === "test") {
-    bandejaPruebas.push({ to, subject, html, text });
+    bandejaPruebas.push({ to, subject, html, text, replyTo });
     return { simulado: true };
   }
   if (!emailConfigurado()) {
@@ -45,6 +45,7 @@ export async function enviarEmail({ to, subject, html, text }) {
     subject,
     html,
     text,
+    ...(replyTo && { replyTo }),
   });
 }
 
