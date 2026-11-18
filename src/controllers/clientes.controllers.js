@@ -15,6 +15,7 @@ import {
   validarFicha,
 } from "../services/clientes.service.js";
 import { contratosDe } from "../services/contratos.service.js";
+import { estadoCuenta } from "../services/cobros.service.js";
 
 // ── GET /clientes/yo ─────────────────────────────────────────────
 // data: null si la cuenta aún no tiene ficha de cliente (rol usuario).
@@ -87,6 +88,7 @@ export const miResumen = async (req, res) => {
       cliente: { nombre: cliente.nombre, estado: cliente.estado, desde: cliente.created_at },
       proyectos,
       contratos_pendientes: contratosPendientes,
+      estado_cuenta: await estadoCuenta(pool, cliente.id),
       conteos: { proyectos_activos: proyectos.length, proyectos: total, solicitudes_abiertas: solicitudesAbiertas },
       actividad: await actividadDe(cliente.id, { soloCliente: true, limite: 8 }),
     },

@@ -66,6 +66,18 @@ Los tests vacían las tablas: se niegan a correr contra una BD cuyo nombre no te
 | POST · DELETE | `/admin/contratos/:id/enviar` · `/admin/contratos/:id` | admin+ → enviar al cliente con `{ nota? }` (reemplaza la versión vigente) · borrar un borrador |
 | GET | `/admin/contratos/:id/archivo` · `/contratos/:id/archivo` | equipo o el cliente dueño → `{ url }` firmada de 5 min (el cliente nunca ve borradores) |
 | POST | `/contratos/:id/aceptar` | Bearer `{ nombre, acepto: true }` → aceptación con fecha, IP, navegador y huella verificada en S3 |
+| GET | `/cobros/mios` | Bearer → estado de cuenta y cobros con sus pagos |
+| POST | `/cobros/mios/:codigo/comprobante?via=&fecha=&referencia=` | Bearer, cuerpo imagen/PDF (≤5 MB) → pago «por verificar» (+ lectura con IA si hay clave) |
+| POST | `/cobros/mios/:codigo/mercadopago` | Bearer → `{ url }` de Checkout Pro por lo pendiente |
+| POST · GET | `/pagos/:id/comprobante` | Bearer → adjuntar la foto a un pago propio sin comprobante · URL firmada |
+| POST | `/webhooks/mercadopago` | Mercado Pago (firma `x-signature`) → confirma el pago consultándolo a la API de MP |
+| GET | `/admin/cobros` | admin+ → comprobantes por verificar, cobros abiertos, cobrado del mes |
+| POST | `/admin/proyectos/:id/cobros` · `/cobros/generar` | admin+ → cobro manual · generar mensualidades que tocan |
+| POST | `/admin/cobros/:id/pagos` · `/admin/cobros/pagar-lote` · `/admin/cobros/:id/anular` | admin+ → registrar pago · varios a la vez (historial) · anular |
+| POST | `/admin/pagos/:id/confirmar` · `/rechazar` · `/comprobante` | admin+ → verificar comprobantes · adjuntar/reemplazar foto |
+| POST | `/admin/clientes/:id/bienvenida` | admin+ → email formal de bienvenida al cliente |
+| GET · POST | `/tickets/mios[/:codigo][/mensajes]` | Bearer → tickets de soporte del cliente |
+| GET · POST · PATCH | `/admin/tickets[/:id][/mensajes]` | admin+ → cola, respuestas/notas internas, estado, prioridad, asignado |
 | POST | `/auth/refresh` | cookie → `{ usuario, accessToken }` y rota la cookie |
 | POST | `/auth/logout` | cookie → revoca la sesión actual |
 | POST | `/auth/logout-todo` | Bearer → revoca todas las sesiones |

@@ -13,3 +13,7 @@ process.env.GOOGLE_CLIENT_SECRET = "test-client-secret";
 process.env.GOOGLE_REDIRECT_URI = "http://localhost:4000/auth/google/callback";
 delete process.env.BREVO_SMTP_EMAIL;
 delete process.env.BREVO_SMTP_PASS;
+// Mercado Pago en modo prueba con la red simulada (test/mercadopago.test.js).
+process.env.MP_ACCESS_TOKEN = "TEST-0000000000000000-000000-pruebas";
+process.env.MP_WEBHOOK_SECRET = "secreto-webhook-de-pruebas";
+delete process.env.ANTHROPIC_API_KEY;

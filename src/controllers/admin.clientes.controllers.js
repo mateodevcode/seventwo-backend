@@ -25,7 +25,11 @@ import {
   validarProyecto,
 } from "../services/clientes.service.js";
 import { contratosDe } from "../services/contratos.service.js";
+import { cobrosDe, estadoCuenta, generarCobrosRecurrentes } from "../services/cobros.service.js";
 import { almacenDisponible } from "../lib/almacen.js";
+import { EQUIPO_EMAIL, FRONTEND_URL } from "../config.js";
+import { bienvenidaCliente } from "../emails/cobros.js";
+import { notificarEnSegundoPlano } from "../services/notificaciones.service.js";
 
 const POR_PAGINA = 20;
 const idValido = (x, msg) => {
@@ -70,7 +74,10 @@ async function fichaAdmin(c) {
   const { rows: [alta] } = c.alta_por
     ? await pool.query("SELECT name FROM usuarios WHERE id = $1", [c.alta_por])
     : { rows: [null] };
-  return { ...c, alta_por_nombre: alta?.name ?? null, cuenta, proyectos, solicitudes, actividad: await actividadDe(c.id) };
+  return {
+    ...c, alta_por_nombre: alta?.name ?? null, cuenta, proyectos, solicitudes,
+    actividad: await actividadDe(c.id), estado_cuenta: await estadoCuenta(pool, c.id),
+  };
 }
 
 // ═════════════════════════ Clientes ═════════════════════════════
@@ -306,6 +313,7 @@ export const verProyecto = async (req, res) => {
       cliente,
       equipo: await equipoActivo(),
       contratos: await contratosDe(pool, p.id),
+      cobros: await cobrosDe(pool, { proyectoId: p.id }),
       almacen: almacenDisponible(),
     },
   });
@@ -324,8 +332,18 @@ export const crearProyectoAdmin = async (req, res) => {
     });
     return nuevo;
   });
-  avisarProyectoCreado(p, cliente).catch((e) => console.error("❌ Aviso de proyecto creado:", e.message));
-  res.status(201).json({ success: true, message: `Proyecto ${p.codigo} creado.`, data: await detalleProyecto(pool, p.id) });
+  // `avisar: false` permite cargar un cliente con historial sin escribirle aún
+  // (luego se le envía la bienvenida desde su ficha).
+  if (req.body?.avisar !== false) {
+    avisarProyectoCreado(p, cliente).catch((e) => console.error("❌ Aviso de proyecto creado:", e.message));
+  }
+  // Mensualidades que ya tocan (incluido el historial si el primer cobro es pasado).
+  const generados = await generarCobrosRecurrentes({ proyectoId: p.id });
+  res.status(201).json({
+    success: true,
+    message: `Proyecto ${p.codigo} creado.${generados ? ` ${generados} cobro(s) generados.` : ""}`,
+    data: await detalleProyecto(pool, p.id),
+  });
 };
 
 // ── PATCH /admin/proyectos/:id { ...campos, hitos? } ─────────────
@@ -374,7 +392,54 @@ export const editarProyecto = async (req, res) => {
     avisarProyectoActualizado(p, cliente, { estado: diff.estado ? datos.estado : null, hitosCompletados: completados })
       .catch((e) => console.error("❌ Aviso de proyecto:", e.message));
   }
-  res.json({ success: true, message: "Proyecto actualizado.", data: await detalleProyecto(pool, p.id) });
+  const generados = await generarCobrosRecurrentes({ proyectoId: p.id });
+  res.json({
+    success: true,
+    message: `Proyecto actualizado.${generados ? ` ${generados} cobro(s) generados.` : ""}`,
+    data: await detalleProyecto(pool, p.id),
+  });
+};
+
+// ── POST /admin/clientes/:id/bienvenida ──────────────────────────
+// Email formal (y aviso in-app si ya tiene cuenta) con su espacio en la web.
+export const enviarBienvenida = async (req, res) => {
+  const c = await buscarCliente(req.params.id);
+  const { rows: [cuenta] } = c.usuario_id
+    ? await pool.query("SELECT id, socket_id, name FROM usuarios WHERE id = $1 AND NOT bloqueado", [c.usuario_id])
+    : { rows: [null] };
+  const { rows: [p] } = await pool.query(
+    "SELECT codigo, nombre FROM proyectos WHERE cliente_id = $1 AND estado = ANY($2) ORDER BY created_at LIMIT 1",
+    [c.id, PROYECTO_ACTIVO],
+  );
+  const ruta = "/area-cliente";
+  const url = cuenta
+    ? `${FRONTEND_URL}/login?next=${encodeURIComponent(ruta)}`
+    : `${FRONTEND_URL}/registro?email=${encodeURIComponent(c.email)}&next=${encodeURIComponent(ruta)}`;
+  notificarEnSegundoPlano({
+    usuarios: cuenta ? [cuenta] : [],
+    tipo: "cliente_bienvenida",
+    titulo: "Bienvenido a tu espacio de cliente",
+    cuerpo: p ? p.nombre : c.nombre,
+    url: ruta,
+    email: {
+      to: c.email,
+      replyTo: EQUIPO_EMAIL,
+      ...bienvenidaCliente({
+        name: c.contacto_nombre || cuenta?.name || c.nombre,
+        empresa: c.nombre_comercial || c.nombre,
+        proyecto: p?.nombre ?? "tu servicio con Seventwo",
+        email: c.email,
+        urlCta: url,
+        textoCta: cuenta ? "Entrar a mi espacio" : "Crear mi cuenta",
+        tieneCuenta: Boolean(cuenta),
+      }),
+    },
+  });
+  await registrarActividad(pool, {
+    cliente_id: c.id, actor_id: req.actor.id, entidad: "cliente", entidad_id: c.id, accion: "bienvenida",
+    descripcion: `${nombreCorto(req.actor)} envió el email de bienvenida a ${c.email}`, visible_cliente: false,
+  });
+  res.json({ success: true, message: `Bienvenida enviada a ${c.email}.` });
 };
 
 // ═══════════════ Solicitud aceptada → cliente + proyecto ═════════
@@ -428,6 +493,7 @@ export const convertirSolicitud = async (req, res) => {
   });
 
   avisarProyectoCreado(proyecto, cliente).catch((e) => console.error("❌ Aviso de proyecto creado:", e.message));
+  await generarCobrosRecurrentes({ proyectoId: proyecto.id });
   res.status(201).json({
     success: true,
     message: `Proyecto ${proyecto.codigo} creado para ${cliente.nombre}.`,

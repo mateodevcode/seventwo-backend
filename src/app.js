@@ -12,6 +12,8 @@ import adminRoutes from "./routes/admin.routes.js";
 import solicitudesRoutes from "./routes/solicitudes.routes.js";
 import clientesRoutes from "./routes/clientes.routes.js";
 import contratosRoutes from "./routes/contratos.routes.js";
+import cobrosRoutes from "./routes/cobros.routes.js";
+import ticketsRoutes from "./routes/tickets.routes.js";
 
 export function crearApp() {
   const app = express();
@@ -48,6 +50,8 @@ export function crearApp() {
   app.use(solicitudesRoutes);
   app.use(clientesRoutes);
   app.use(contratosRoutes);
+  app.use(cobrosRoutes);
+  app.use(ticketsRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

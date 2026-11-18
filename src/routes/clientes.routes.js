@@ -31,6 +31,12 @@ router.get("/admin/clientes", ...soloEquipo, limAdmin, admin.listarClientes);
 router.post("/admin/clientes", ...soloEquipo, limAdmin, admin.crearCliente);
 router.get("/admin/clientes/:id", ...soloEquipo, limAdmin, admin.verCliente);
 router.patch("/admin/clientes/:id", ...soloEquipo, limAdmin, admin.editarCliente);
+router.post(
+  "/admin/clientes/:id/bienvenida",
+  ...soloEquipo,
+  rateLimit({ nombre: "bienvenida", max: 10, ventanaSeg: 3600, clave: porUsuario }),
+  admin.enviarBienvenida,
+);
 
 router.get("/admin/servicios", ...soloEquipo, limAdmin, admin.listarServicios);
 router.post("/admin/servicios", ...soloEquipo, limAdmin, admin.crearServicio);

@@ -68,6 +68,13 @@ export const AWS_PREFIJO = (env.AWS_BUCKET_SUBFOLDER || "seventwo").replace(/^\/
 export const s3Configurado = () =>
   Boolean(AWS_REGION && AWS_BUCKET && env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY);
 
+// ── Mercado Pago (Checkout Pro). Token TEST-… = modo prueba (sandbox).
+export const MP_ACCESS_TOKEN = env.MP_ACCESS_TOKEN?.trim();
+export const MP_WEBHOOK_SECRET = env.MP_WEBHOOK_SECRET?.trim();
+// URL pública de esta API (para notification_url del webhook).
+export const API_PUBLIC_URL = (env.API_PUBLIC_URL || (IS_PROD ? "https://api.seventwo.tech" : `http://localhost:${PORT}`)).replace(/\/$/, "");
+export const mpConfigurado = () => Boolean(MP_ACCESS_TOKEN);
+
 export const socketConfigurado = () => Boolean(SOCKET_CORE_URL && SOCKET_CORE_API_KEY);
 export const pushConfigurado = () => Boolean(VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY);
 export const telegramConfigurado = () => Boolean(TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID);
@@ -119,6 +126,8 @@ export function validarConfig() {
     !socketConfigurado() && "socket-core (tiempo real)",
     !pushConfigurado() && "Web Push",
     !telegramConfigurado() && "Telegram",
+    !mpConfigurado() && "Mercado Pago",
+    !process.env.ANTHROPIC_API_KEY && "lectura de comprobantes con IA",
   ].filter(Boolean);
   if (off.length) console.warn(`ℹ️  Canales de aviso desactivados: ${off.join(", ")}.`);
 }

@@ -206,6 +206,7 @@ const REGLAS_PROYECTO = {
   importe_periodo: (x) => v.dinero(x, { nombre: "El importe por periodo" }),
   periodicidad: (x) => v.opcion(x, PERIODICIDADES, { nombre: "La periodicidad" }),
   proximo_cobro: (x) => v.fecha(x),
+  recordatorio_dias: (x) => v.entero(x, { min: 0, max: 30, nombre: "Los días de recordatorio" }) ?? 3,
   horas_contratadas: (x) => v.decimal(x, { max: 100000, nombre: "Las horas" }),
   precio_hora: (x) => v.dinero(x, { nombre: "El precio por hora" }),
   estado: (x) => v.opcion(x, ESTADOS_PROYECTO, { nombre: "El estado" }) ?? "propuesta",

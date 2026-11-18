@@ -13,6 +13,7 @@ try {
 const { crearApp } = await import("./app.js");
 const { pool } = await import("./db.js");
 const { iniciarLimpieza } = await import("./jobs/limpieza.job.js");
+const { iniciarCobros } = await import("./jobs/cobros.job.js");
 const { verificarSmtp } = await import("./lib/mailer.js");
 
 const app = crearApp();
@@ -21,6 +22,7 @@ const server = app.listen(PORT, () => {
 });
 
 iniciarLimpieza();
+iniciarCobros();
 verificarSmtp();
 
 const apagar = (senal) => {

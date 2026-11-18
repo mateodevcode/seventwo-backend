@@ -23,7 +23,7 @@ export const errorHandler = (err, req, res, next) => {
   }
   // Cuerpo por encima del límite (JSON 100 kb, PDF 10 MB)
   if (err.type === "entity.too.large") {
-    return res.status(413).json({ success: false, error: "El archivo es demasiado grande (máx. 10 MB)." });
+    return res.status(413).json({ success: false, error: "El archivo es demasiado grande (contratos máx. 10 MB, comprobantes máx. 5 MB)." });
   }
 
   console.error(`❌ ${req.method} ${req.originalUrl}:`, err);
